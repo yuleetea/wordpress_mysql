@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  # Database
+  db:
+    image: mysql:latest
+    # persistent data volumes
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password 
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      # we set networks because we want all of our containers to run on the docker network
+    networks:
+      - wpsite
+    #phpmyadmin
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '8081:80'
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - wpsite 
+    #Wordpress
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    #access from our local machine
+    ports:
+      - '8000:80'
+    restart: always
+    # we want the volumes to map from this directory to the /var/www/html apache web route to sync them up to this folder
+    volumes: ['./:/var/www/html']
+    environment:
+    #We are connecting this DB_Host to the database image, which has a default listener port of 3306
+    #Make sure that the USER and PASSWORD match the USER AND PASSWORD of the MYSQL database above us
+        WORDPRESS_DB_HOST: db:3306
+        WORDPRESS_DB_USER: wordpress
+        WORDPRESS_DB_PASSWORD: wordpress
+    networks:
+      - wpsite
+      #we need to map the db Volumes: db_data: /var/lib/mysql to the networks: wpsite
+networks:
+  wpsite:
+volumes:
+  db_data:
+
+
+    
